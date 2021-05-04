@@ -1,0 +1,46 @@
+.idea/
+venv/
+
+
+# Smartbugs gitignore (github bug)
+#Ignore results
+smartbugs/results/oyente/*
+smartbugs/results/honeybadger/*
+smartbugs/results/osiris/*
+smartbugs/results/maian/*
+smartbugs/results/manticore/*
+smartbugs/results/mythril/*
+smartbugs/results/securify/*
+smartbugs/results/smartcheck/*
+smartbugs/results/slither/*
+smartbugs/results/solhint/*
+smartbugs/results/logs/*
+
+#Keep folders
+!smartbugs/results/securify/.keep
+!smartbugs/results/oyente/.keep
+!smartbugs/results/maian/.keep
+!smartbugs/results/mythril/.keep
+!smartbugs/results/manticore/.keep
+!smartbugs/results/smartcheck/.keep
+!smartbugs/results/slither/.keep
+!smartbugs/results/solhint/.keep
+!smartbugs/results/logs/.keep
+
+#Ignore DS_Store
+smartbugs/.DS_Store
+
+#Ignore pycache
+smartbugs/*.pyc
+smartbugs/__pycache__
+
+#Ignore vscode
+smartbugs/.vscode/
+
+#Ignore default remote datasets
+smartbugs/dataset/solidiFI
+
+#Ignore PyCharm files
+smartbugs/venv/
+smartbugs/.idea/
+smartbugs/results/*.*
