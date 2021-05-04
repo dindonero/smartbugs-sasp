@@ -3,18 +3,19 @@
 import argparse
 import json
 import os
+import pathlib
 import sys
 from datetime import timedelta
 from multiprocessing import Pool, Value, Manager
 from time import time, localtime, strftime
 
 import git
-import yaml
 
 from smartbugs.src.docker_api.docker_api import analyse_files
 from smartbugs.src.output_parser.SarifHolder import SarifHolder
 
 output_folder = strftime("%Y%d%m_%H%M", localtime())
+pathlib.Path('smartbugs/results/logs/').mkdir(parents=True, exist_ok=True)
 logs = open('smartbugs/results/logs/SmartBugs_' + output_folder + '.log', 'w')
 start_time = time()
 nb_task_done = Value('i', 0)
