@@ -177,5 +177,9 @@ def isNotDuplicateArtifact(newArtifact, artifactsList):
     return True
 
 
+# Returns True when LogicalLocation is unique
 def isNotDuplicateLogicalLocation(newLogicalLocation, logicalLocationList):
+    for logicalLocation in logicalLocationList:
+        if logicalLocation.name == newLogicalLocation.name:
+            return False
     return True
