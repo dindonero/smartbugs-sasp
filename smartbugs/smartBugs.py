@@ -1,31 +1,26 @@
 #!/usr/bin/env python3
 
-import argparse
-import json
-import os
 import pathlib
 import sys
 from datetime import timedelta
-from multiprocessing import Pool, Value, Manager
+from multiprocessing import Value
 from time import time, localtime, strftime
 
-import git
-
 from smartbugs.src.docker_api.docker_api import analyse_files
-from smartbugs.src.output_parser.SarifHolder import SarifHolder
 
 output_folder = strftime("%Y%d%m_%H%M", localtime())
 pathlib.Path('smartbugs/results/logs/').mkdir(parents=True, exist_ok=True)
 logs = open('smartbugs/results/logs/SmartBugs_' + output_folder + '.log', 'w')
 start_time = time()
+
 nb_task_done = Value('i', 0)
 total_execution = Value('f', 0)
 
 
 def analyse(args):
-    global logs, output_folder, nb_task_done, total_execution
+    global logs
 
-    (tool, file, sarif_holder, import_path, output_folder, v1_output, nb_task) = args
+    (tool, file, sarif_holder, import_path, results_output_folder, v1_output, nb_task) = args
 
     try:
         start = time()
@@ -34,7 +29,7 @@ def analyse(args):
         sys.stdout.write('\x1b[1;34m' + file + '\x1b[0m')
         sys.stdout.write('\x1b[1;37m' + ' [' + tool + ']' + '\x1b[0m' + '\n')
 
-        analyse_files(tool, file, logs, output_folder, sarif_holder, v1_output, import_path)
+        analyse_files(tool, file, logs, results_output_folder, sarif_holder, v1_output, import_path)
 
         with nb_task_done.get_lock():
             nb_task_done.value += 1

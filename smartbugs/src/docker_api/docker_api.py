@@ -143,6 +143,7 @@ def parse_results(output, tool, file_name, container, cfg, logs, results_folder,
         if tool == 'oyente':
             results['analysis'] = Oyente().parse(output)
             # Sarif Conversion
+            # todo add lock
             sarif_holder.addRun(Oyente().parseSarif(results, file_path_in_repo))
         elif tool == 'osiris':
             results['analysis'] = Osiris().parse(output)
