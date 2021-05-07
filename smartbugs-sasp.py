@@ -2,7 +2,7 @@ import json
 import os
 import pathlib
 import time
-from multiprocessing import Pool
+from multiprocessing import Pool, Manager
 from multiprocessing.managers import BaseManager
 
 from flask import Flask, request, send_from_directory
@@ -79,12 +79,16 @@ def analyse_solidity_files():
     manager.start()
     sarif_holder = manager.SarifHolder()
 
+    manager = Manager()
+    nb_task_done = manager.Value('i', 0)
+    total_execution = manager.Value('f', 0)
+
     # Setup SmartBugs analysis
     tasks = []
     for file in files_to_analyze:
         for tool in tools:
             tasks.append((tool, file.replace('\\', '/'), sarif_holder, repo_user_path, results_user_path, DEBUG,
-                          len(files_to_analyze) * len(tools)))  # SmartBugs V1 Output for Debug purposes
+                          len(files_to_analyze) * len(tools), nb_task_done, total_execution))  # SmartBugs V1 Output for Debug purposes
     pathlib.Path(results_user_path).mkdir(parents=True, exist_ok=True)
 
     # Run SmartBugs analysis
