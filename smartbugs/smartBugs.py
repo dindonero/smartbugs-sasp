@@ -10,14 +10,13 @@ from smartbugs.src.docker_api.docker_api import analyse_files
 output_folder = strftime("%Y%d%m_%H%M", localtime())
 pathlib.Path('smartbugs/results/logs/').mkdir(parents=True, exist_ok=True)
 logs = open('smartbugs/results/logs/SmartBugs_' + output_folder + '.log', 'w')
-start_time = time()
 
 
 def analyse(args):
     global logs
 
     (tool, file, sarif_holder, import_path, results_output_folder, v1_output, nb_task, nb_task_done,
-     total_execution) = args
+     total_execution, start_time) = args
 
     try:
         start = time()
