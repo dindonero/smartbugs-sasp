@@ -10,8 +10,6 @@ from flask import Flask, request, send_from_directory
 from smartbugs.smartBugs import analyse
 from smartbugs.src.output_parser.SarifHolder import SarifHolder
 
-from time import time
-
 DEBUG = True
 
 CONFIG_TOOLS_PATH = 'smartbugs/config/tools'
@@ -90,7 +88,7 @@ def analyse_solidity_files():
     for file in files_to_analyze:
         for tool in tools:
             tasks.append((tool, file.replace('\\', '/'), sarif_holder, repo_user_path, results_user_path, DEBUG,
-                          len(files_to_analyze) * len(tools), nb_task_done, total_execution, time()))  # SmartBugs V1 Output for Debug purposes
+                          len(files_to_analyze) * len(tools), nb_task_done, total_execution, time.time()))  # SmartBugs V1 Output for Debug purposes
     pathlib.Path(results_user_path).mkdir(parents=True, exist_ok=True)
 
     # Run SmartBugs analysis
