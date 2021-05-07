@@ -7,7 +7,7 @@ from multiprocessing.managers import BaseManager
 
 from flask import Flask, request, send_from_directory
 
-import smartbugs
+from smartbugs import smartBugs
 from smartbugs.src.output_parser.SarifHolder import SarifHolder
 
 DEBUG = True
@@ -90,7 +90,7 @@ def analyse_solidity_files():
     # Run SmartBugs analysis
     # app.logger.debug('Starting SmartBugs run with Tasks: {}'.format(tasks))
     with Pool(processes=processes) as pool:
-        pool.map(smartbugs.smartBugs.analyse, tasks)
+        pool.map(smartBugs.analyse, tasks)
 
     with open(results_user_path + 'results.sarif', 'w') as sarif_file:
         json.dump(sarif_holder.print(), sarif_file, indent=2)
