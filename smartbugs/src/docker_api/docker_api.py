@@ -11,6 +11,7 @@ import docker
 import yaml
 from solidity_parser import parser
 
+from smartbugs.src.output_parser.Conkas import Conkas
 from smartbugs.src.output_parser.HoneyBadger import HoneyBadger
 from smartbugs.src.output_parser.Maian import Maian
 from smartbugs.src.output_parser.Manticore import Manticore
@@ -195,6 +196,9 @@ def parse_results(output, tool, file_name, container, cfg, logs, results_folder,
                     output_file = tar.extractfile('results/' + fout + '/global.findings')
                     results['analysis'].append(Manticore().parse(output_file.read().decode('utf8')))
                 sarif_holder.addRun(Manticore().parseSarif(results, file_path_in_repo))
+        elif tool == 'conkas':
+            results['analysis'] = Conkas().parse(output)
+            sarif_holder.addRun(Conkas().parseSarif(results, file_path_in_repo))
 
 
     except Exception as e:
