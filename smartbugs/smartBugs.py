@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
+from datetime import timedelta
 import pathlib
 import sys
-from datetime import timedelta
 from time import time, localtime, strftime
 
 from smartbugs.src.docker_api.docker_api import analyse_files
@@ -15,8 +15,8 @@ logs = open('smartbugs/results/logs/SmartBugs_' + output_folder + '.log', 'w')
 def analyse(args):
     global logs
 
-    (tool, file, sarif_holder, import_path, results_output_folder, v1_output, nb_task, nb_task_done,
-     total_execution, start_time) = args
+    (tool, file, sarif_holder, import_path, results_output_folder, output_version, nb_task, nb_task_done, total_execution,
+     start_time) = args
 
     try:
         start = time()
@@ -25,7 +25,7 @@ def analyse(args):
         sys.stdout.write('\x1b[1;34m' + file + '\x1b[0m')
         sys.stdout.write('\x1b[1;37m' + ' [' + tool + ']' + '\x1b[0m' + '\n')
 
-        analyse_files(tool, file, logs, results_output_folder, sarif_holder, v1_output, import_path)
+        analyse_files(tool, file, logs, results_output_folder, sarif_holder, output_version, import_path)
 
         nb_task_done.value += 1
 

@@ -1,8 +1,8 @@
 from sarif_om import *
 
 from smartbugs.src.output_parser.Parser import Parser
-from smartbugs.src.output_parser.SarifHolder import isNotDuplicateRule, isNotDuplicateArtifact, parseRule, parseResult, \
-    parseArtifact, parseLogicalLocation
+from smartbugs.src.output_parser.SarifHolder import isNotDuplicateRule, parseRule, parseResult, \
+    parseArtifact, parseLogicalLocation, isNotDuplicateLogicalLocation
 
 
 class Osiris(Parser):
@@ -54,13 +54,10 @@ class Osiris(Parser):
 
     def parseSarif(self, osiris_output_results, file_path_in_repo):
         resultsList = []
-        artifactsList = []
         logicalLocationsList = []
         rulesList = []
 
         for analysis in osiris_output_results["analysis"]:
-            artifact = None
-            logicalLocation = None
 
             for result in analysis["errors"]:
                 rule = parseRule(tool="osiris", vulnerability=result["message"])
@@ -72,17 +69,18 @@ class Osiris(Parser):
                 if isNotDuplicateRule(rule, rulesList):
                     rulesList.append(rule)
 
-                artifact = parseArtifact(uri=file_path_in_repo)
-                logicalLocation = parseLogicalLocation(name=analysis["name"])
+            logicalLocation = parseLogicalLocation(name=analysis["name"])
 
-            if artifact != None and isNotDuplicateArtifact(artifact, artifactsList): artifactsList.append(artifact)
-            if logicalLocation != None: logicalLocationsList.append(logicalLocation)
+            if isNotDuplicateLogicalLocation(logicalLocation, logicalLocationsList):
+                logicalLocationsList.append(logicalLocation)
+
+        artifact = parseArtifact(uri=file_path_in_repo)
 
         tool = Tool(driver=ToolComponent(name="Osiris", version="1.0", rules=rulesList,
                                          information_uri="https://github.com/christoftorres/Osiris",
                                          full_description=MultiformatMessageString(
                                              text="Osiris is an analysis tool to detect integer bugs in Ethereum smart contracts. Osiris is based on Oyente.")))
 
-        run = Run(tool=tool, artifacts=artifactsList, logical_locations=logicalLocationsList, results=resultsList)
+        run = Run(tool=tool, artifacts=[artifact], logical_locations=logicalLocationsList, results=resultsList)
 
         return run

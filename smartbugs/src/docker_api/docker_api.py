@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 
+import docker
 import json
 import os
 import re
 import sys
 import tarfile
-from time import time
-
-import docker
 import yaml
+
 from solidity_parser import parser
 
 from smartbugs.src.output_parser.Conkas import Conkas
@@ -23,13 +22,14 @@ from smartbugs.src.output_parser.Slither import Slither
 from smartbugs.src.output_parser.Smartcheck import Smartcheck
 from smartbugs.src.output_parser.Solhint import Solhint
 
+from time import time
+
+
 client = docker.from_env()
 
 """
 get solidity compiler version
 """
-
-
 def get_solc_verion(file, logs):
     try:
         with open(file, 'r', encoding='utf-8') as fd:
@@ -47,8 +47,6 @@ def get_solc_verion(file, logs):
 """
 pull images
 """
-
-
 def pull_image(image, logs):
     try:
         print('pulling ' + image + ' image, this may take a while...')
@@ -65,8 +63,6 @@ def pull_image(image, logs):
 """
 mount volumes
 """
-
-
 def mount_volumes(dir_path, logs):
     try:
         volume_bindings = {os.path.abspath(dir_path): {'bind': '/' + dir_path, 'mode': 'rw'}}
@@ -79,8 +75,6 @@ def mount_volumes(dir_path, logs):
 """
 stop container
 """
-
-
 def stop_container(container, logs):
     try:
         if container is not None:
@@ -93,8 +87,6 @@ def stop_container(container, logs):
 """
 remove container
 """
-
-
 def remove_container(container, logs):
     try:
         if container is not None:
@@ -107,10 +99,8 @@ def remove_container(container, logs):
 """
 write output
 """
-
-
 def parse_results(output, tool, file_name, container, cfg, logs, results_folder, start, end, sarif_holder,
-                  file_path_in_repo, v1_output):
+                  file_path_in_repo, output_version):
     output_folder = os.path.join(results_folder, file_name)
 
     results = {
@@ -207,20 +197,19 @@ def parse_results(output, tool, file_name, container, cfg, logs, results_folder,
         # ignore
         pass
 
-    with open(os.path.join(output_folder, tool + '.sarif'), 'w') as sarifFile:
-        json.dump(sarif_holder.printToolRun(tool=tool), sarifFile, indent=2)
-
-    if v1_output:
+    if output_version == 'v1' or output_version == 'all':
         with open(os.path.join(output_folder, tool + '.json'), 'w') as f:
             json.dump(results, f, indent=2)
+
+    if output_version == 'v2' or output_version == 'all':
+        with open(os.path.join(output_folder, tool + '.sarif'), 'w') as sarifFile:
+            json.dump(sarif_holder.printToolRun(tool=tool), sarifFile, indent=2)
 
 
 """
 analyse solidity files
 """
-
-
-def analyse_files(tool, file, logs, now, sarif_holder, v1_output, import_path):
+def analyse_files(tool, file, logs, now, sarif_holder, output_version, import_path):
     try:
         cfg_path = os.path.abspath('smartbugs/config/tools/' + tool + '.yaml')
         with open(cfg_path, 'r', encoding='utf-8') as ymlfile:
@@ -280,10 +269,10 @@ def analyse_files(tool, file, logs, now, sarif_holder, v1_output, import_path):
 
             end = time()
 
-            file_path_in_repo = file.replace(import_path, '')  # results in file location without repo/user/
+            file_path_in_repo = file.replace(import_path, '')  # file path relative to project's root directory
 
             parse_results(output, tool, file_name, container, cfg, logs, now, start, end, sarif_holder,
-                          file_path_in_repo, v1_output)
+                          file_path_in_repo, output_version)
         finally:
             stop_container(container, logs)
             remove_container(container, logs)

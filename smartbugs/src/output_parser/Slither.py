@@ -1,6 +1,6 @@
 from sarif_om import *
 
-from smartbugs.src.output_parser.SarifHolder import isNotDuplicateRule, isNotDuplicateArtifact, parseRule, \
+from smartbugs.src.output_parser.SarifHolder import isNotDuplicateRule, parseRule, \
     parseArtifact, parseResult
 
 
@@ -9,7 +9,6 @@ class Slither:
     def parseSarif(self, slither_output_results, file_path_in_repo):
         rulesList = []
         resultsList = []
-        artifactsList = []
 
         for analysis in slither_output_results["analysis"]:
 
@@ -22,9 +21,6 @@ class Slither:
                     artifact_location=ArtifactLocation(uri=file_path_in_repo),
                     region=Region(start_line=element["source_mapping"]["lines"][0],
                                   end_line=element["source_mapping"]["lines"][-1])), logical_locations=[])
-                artifact = parseArtifact(uri=file_path_in_repo)
-                if isNotDuplicateArtifact(artifact, artifactsList):
-                    artifactsList.append(artifact)
 
                 if "name" in element.keys():
                     if "type" in element.keys():
@@ -49,11 +45,13 @@ class Slither:
 
             resultsList.append(result)
 
+        artifact = parseArtifact(uri=file_path_in_repo)
+
         tool = Tool(driver=ToolComponent(name="Slither", version="0.7.0", rules=rulesList,
                                          information_uri="https://github.com/crytic/slither",
                                          full_description=MultiformatMessageString(
                                              text="Slither is a Solidity static analysis framework written in Python 3. It runs a suite of vulnerability detectors and prints visual information about contract details. Slither enables developers to find vulnerabilities, enhance their code comphrehension, and quickly prototype custom analyses.")))
 
-        run = Run(tool=tool, artifacts=artifactsList, results=resultsList)
+        run = Run(tool=tool, artifacts=[artifact], results=resultsList)
 
         return run

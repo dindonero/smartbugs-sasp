@@ -1,7 +1,7 @@
 from sarif_om import *
 
 from smartbugs.src.output_parser.Parser import Parser
-from smartbugs.src.output_parser.SarifHolder import isNotDuplicateRule, isNotDuplicateArtifact, parseRule, parseResult, \
+from smartbugs.src.output_parser.SarifHolder import isNotDuplicateRule, parseRule, parseResult, \
     parseArtifact, parseLogicalLocation
 
 
@@ -36,7 +36,6 @@ class Solhint(Parser):
 
     def parseSarif(self, solhint_output_results, file_path_in_repo):
         resultsList = []
-        artifactsList = []
         rulesList = []
 
         for analysis in solhint_output_results["analysis"]:
@@ -49,10 +48,7 @@ class Solhint(Parser):
             if isNotDuplicateRule(rule, rulesList):
                 rulesList.append(rule)
 
-            artifact = parseArtifact(uri=file_path_in_repo)
-
-            if isNotDuplicateArtifact(artifact, artifactsList):
-                artifactsList.append(artifact)
+        artifact = parseArtifact(uri=file_path_in_repo)
 
         logicalLocation = parseLogicalLocation(name=solhint_output_results["contract"], kind="contract")
 
@@ -61,6 +57,6 @@ class Solhint(Parser):
                                          full_description=MultiformatMessageString(
                                              text="Open source project for linting solidity code. This project provide both security and style guide validations.")))
 
-        run = Run(tool=tool, artifacts=artifactsList, logical_locations=[logicalLocation], results=resultsList)
+        run = Run(tool=tool, artifacts=[artifact], logical_locations=[logicalLocation], results=resultsList)
 
         return run
