@@ -46,6 +46,8 @@ def analyse_solidity_files():
     tools = request.form['tools'].split(',')
     processes = 1
 
+    assert user_hash.isalnum()
+
     app.logger.debug('Receiving Request with - User-Hash: {}, Tools: {}'.format(user_hash, tools))
 
     results_user_path = RESULTS_FOLDER + '/user-' + user_hash + '/' + time.strftime("%Y%d%m_%H%M",
