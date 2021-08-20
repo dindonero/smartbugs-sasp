@@ -104,8 +104,6 @@ def analyse_solidity_files():
         # initialize all sarif outputs
         sarif_outputs[file_path_in_repo] = SarifHolder()
 
-        print(file)
-
         for tool in tools:
             tasks.append((
                          tool, file.replace('\\', '/'), file_path_in_repo , sarif_outputs, repo_user_path,
@@ -123,8 +121,6 @@ def analyse_solidity_files():
     for sarif_output in sarif_outputs.values():
         for run in sarif_output.sarif.runs:
             sarif_holder.addRun(run)
-
-    print(sarif_outputs)
 
     with open(results_user_path + 'results.sarif', 'w') as sarif_file:
         json.dump(sarif_holder.print(), sarif_file, indent=2)
