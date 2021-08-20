@@ -10,17 +10,17 @@ import yaml
 
 from solidity_parser import parser
 
-from smartbugs.src.output_parser.Conkas import Conkas
-from smartbugs.src.output_parser.HoneyBadger import HoneyBadger
-from smartbugs.src.output_parser.Maian import Maian
-from smartbugs.src.output_parser.Manticore import Manticore
-from smartbugs.src.output_parser.Mythril import Mythril
-from smartbugs.src.output_parser.Osiris import Osiris
-from smartbugs.src.output_parser.Oyente import Oyente
-from smartbugs.src.output_parser.Securify import Securify
-from smartbugs.src.output_parser.Slither import Slither
-from smartbugs.src.output_parser.Smartcheck import Smartcheck
-from smartbugs.src.output_parser.Solhint import Solhint
+from src.output_parser.Conkas import Conkas
+from src.output_parser.HoneyBadger import HoneyBadger
+from src.output_parser.Maian import Maian
+from src.output_parser.Manticore import Manticore
+from src.output_parser.Mythril import Mythril
+from src.output_parser.Osiris import Osiris
+from src.output_parser.Oyente import Oyente
+from src.output_parser.Securify import Securify
+from src.output_parser.Slither import Slither
+from src.output_parser.Smartcheck import Smartcheck
+from src.output_parser.Solhint import Solhint
 
 from time import time
 
@@ -30,7 +30,7 @@ client = docker.from_env()
 """
 get solidity compiler version
 """
-def get_solc_verion(file, logs):
+def get_solc_version(file, logs):
     try:
         with open(file, 'r', encoding='utf-8') as fd:
             sourceUnit = parser.parse(fd.read())
@@ -99,7 +99,7 @@ def remove_container(container, logs):
 """
 write output
 """
-def parse_results(output, tool, file_name, container, cfg, logs, results_folder, start, end, sarif_holder,
+def parse_results(output, tool, file_name, container, cfg, logs, results_folder, start, end, sarif_outputs,
                   file_path_in_repo, output_version):
     output_folder = os.path.join(results_folder, file_name)
 
@@ -131,6 +131,7 @@ def parse_results(output, tool, file_name, container, cfg, logs, results_folder,
             logs.write('ERROR: could not get file from container. file not analysed.\n')
 
     try:
+        sarif_holder = sarif_outputs[file_path_in_repo]
         if tool == 'oyente':
             results['analysis'] = Oyente().parse(output)
             # Sarif Conversion
@@ -190,6 +191,7 @@ def parse_results(output, tool, file_name, container, cfg, logs, results_folder,
             results['analysis'] = Conkas().parse(output)
             sarif_holder.addRun(Conkas().parseSarif(results, file_path_in_repo))
 
+        sarif_outputs[file_path_in_repo] = sarif_holder
 
     except Exception as e:
         print(output)
@@ -198,26 +200,33 @@ def parse_results(output, tool, file_name, container, cfg, logs, results_folder,
         pass
 
     if output_version == 'v1' or output_version == 'all':
-        with open(os.path.join(output_folder, tool + '.json'), 'w') as f:
+        with open(os.path.join(output_folder, 'result.json'), 'w') as f:
             json.dump(results, f, indent=2)
 
     if output_version == 'v2' or output_version == 'all':
-        with open(os.path.join(output_folder, tool + '.sarif'), 'w') as sarifFile:
-            json.dump(sarif_holder.printToolRun(tool=tool), sarifFile, indent=2)
+        with open(os.path.join(output_folder, 'result.sarif'), 'w') as sarifFile:
+            json.dump(sarif_outputs[file_path_in_repo].printToolRun(tool=tool), sarifFile, indent=2)
+
 
 
 """
 analyse solidity files
 """
-def analyse_files(tool, file, logs, now, sarif_holder, output_version, import_path):
+def analyse_files(tool, file, file_path_in_repo, logs, now, sarif_outputs, output_version, import_path):
     try:
-        cfg_path = os.path.abspath('smartbugs/config/tools/' + tool + '.yaml')
+        cfg_path = os.path.abspath(os.path.dirname(__file__) + '/../../config/tools/' + tool + '.yaml')
         with open(cfg_path, 'r', encoding='utf-8') as ymlfile:
             try:
                 cfg = yaml.safe_load(ymlfile)
             except yaml.YAMLError as exc:
                 print(exc)
                 logs.write(exc)
+
+        # create result folder with time
+        results_folder = os.path.dirname(__file__) + '/../../results/' + tool + '/' + now
+        if not os.path.exists(results_folder):
+            os.makedirs(results_folder)
+        # os.makedirs(os.path.dirname(results_folder), exist_ok=True)
 
         # check if config file as all required fields
         if 'default' not in cfg['docker_image'] or cfg['docker_image'] == None:
@@ -227,6 +236,8 @@ def analyse_files(tool, file, logs, now, sarif_holder, output_version, import_pa
             logs.write(tool + ': commands not provided. please check you config file.\n')
             sys.exit(tool + ': commands not provided. please check you config file.')
 
+
+
         # bind directory path instead of file path to allow imports in the same directory
         volume_bindings = mount_volumes(os.path.dirname(import_path), logs)
 
@@ -234,7 +245,7 @@ def analyse_files(tool, file, logs, now, sarif_holder, output_version, import_pa
         file_name = os.path.splitext(file_name)[0]
         start = time()
 
-        (solc_version, solc_version_minor) = get_solc_verion(file, logs)
+        (solc_version, solc_version_minor) = get_solc_version(file, logs)
 
         if isinstance(solc_version, int) and solc_version < 5 and 'solc<5' in cfg['docker_image']:
             image = cfg['docker_image']['solc<5']
@@ -269,9 +280,7 @@ def analyse_files(tool, file, logs, now, sarif_holder, output_version, import_pa
 
             end = time()
 
-            file_path_in_repo = file.replace(import_path, '')  # file path relative to project's root directory
-
-            parse_results(output, tool, file_name, container, cfg, logs, now, start, end, sarif_holder,
+            parse_results(output, tool, file_name, container, cfg, logs, results_folder, start, end, sarif_outputs,
                           file_path_in_repo, output_version)
         finally:
             stop_container(container, logs)

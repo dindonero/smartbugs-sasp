@@ -16,6 +16,8 @@ CONFIG_TOOLS_PATH = 'smartbugs/config/tools'
 RESULTS_FOLDER = 'results'
 REPOS_FOLDER = 'repos'
 
+current_users = []  # todo persistent storage
+
 app = Flask(__name__)
 
 
@@ -42,11 +44,17 @@ def get_available_tools():
 
 @app.route('/', methods=('GET', 'POST'))
 def analyse_solidity_files():
+    global current_users
     user_hash = request.form['user-hash']
-    tools = request.form['tools'].split(',')
+    tools = request.form['tools'].replace(' ', '').split(',')
     processes = 1
 
     assert user_hash.isalnum()
+
+    if user_hash in current_users:
+        raise Exception('User is already performing an analysis.')
+
+    current_users.append(user_hash)
 
     app.logger.debug('Receiving Request with - User-Hash: {}, Tools: {}'.format(user_hash, tools))
 
@@ -76,12 +84,9 @@ def analyse_solidity_files():
                 app.logger.error('Requested tool not available. Tool: %s', tool)
                 return 'Requested tool not available. Tool: {}'.format(tool), 404  # Http Bad Request
 
-    BaseManager.register('SarifHolder', SarifHolder)
-    manager = BaseManager()
-    manager.start()
-    sarif_holder = manager.SarifHolder()
-
     manager = Manager()
+    sarif_outputs = manager.dict()
+
     nb_task_done = manager.Value('i', 0)
     total_execution = manager.Value('f', 0)
 
@@ -93,9 +98,20 @@ def analyse_solidity_files():
     # Setup SmartBugs analysis
     tasks = []
     for file in files_to_analyze:
+
+        file_path_in_repo = file.replace(repo_user_path, '').replace('\\', '/')
+
+        # initialize all sarif outputs
+        sarif_outputs[file_path_in_repo] = SarifHolder()
+
+        print(file)
+
         for tool in tools:
-            tasks.append((tool, file.replace('\\', '/'), sarif_holder, repo_user_path, results_user_path, output_version,
-                          len(files_to_analyze) * len(tools), nb_task_done, total_execution, time.time()))  # SmartBugs V1 Output for Debug purposes
+            tasks.append((
+                         tool, file.replace('\\', '/'), file_path_in_repo , sarif_outputs, repo_user_path,
+                         output_version,
+                         len(files_to_analyze) * len(tools), nb_task_done, total_execution,
+                         time.time()))  # SmartBugs V1 Output for Debug purposes
     pathlib.Path(results_user_path).mkdir(parents=True, exist_ok=True)
 
     # Run SmartBugs analysis
@@ -103,8 +119,17 @@ def analyse_solidity_files():
     with Pool(processes=processes) as pool:
         pool.map(analyse, tasks)
 
+    sarif_holder = SarifHolder()
+    for sarif_output in sarif_outputs.values():
+        for run in sarif_output.sarif.runs:
+            sarif_holder.addRun(run)
+
+    print(sarif_outputs)
+
     with open(results_user_path + 'results.sarif', 'w') as sarif_file:
         json.dump(sarif_holder.print(), sarif_file, indent=2)
+
+    current_users.remove(user_hash)
 
     return send_from_directory(directory=results_user_path, filename='results.sarif', as_attachment=True)
 
