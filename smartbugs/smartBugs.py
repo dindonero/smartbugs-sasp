@@ -147,12 +147,14 @@ def exec_cmd(args: argparse.Namespace):
     file_paths_in_repo = []
     for file in files_to_analyze:
         if args.import_path == "FILE":
+            import_path = os.path.dirname(file)
             file_path_in_repo = file
         else:
+            import_path = args.import_path
             file_path_in_repo = file.replace(args.import_path, '')  # file path relative to project's root directory
         file_paths_in_repo.append(file_path_in_repo)
         for tool in args.tool:
-            results_folder = 'results/' + tool + '/' + output_folder
+            results_folder = os.path.dirname(os.path.realpath(__file__)) + '/results/' + tool + '/' + output_folder
             if not os.path.exists(results_folder):
                 os.makedirs(results_folder)
 
@@ -162,7 +164,7 @@ def exec_cmd(args: argparse.Namespace):
                 if os.path.exists(folder):
                     continue
 
-            tasks.append((tool, file, file_path_in_repo, sarif_outputs, args.import_path, args.output_version, nb_task, nb_task_done,
+            tasks.append((tool, file, file_path_in_repo, sarif_outputs, import_path, args.output_version, nb_task, nb_task_done,
                           total_execution, start_time))
         file_names.append(os.path.splitext(os.path.basename(file))[0])
 
@@ -175,7 +177,7 @@ def exec_cmd(args: argparse.Namespace):
 
     if args.aggregate_sarif:
         for file_name in file_names:
-            sarif_file_path = 'results/' + output_folder + '/'
+            sarif_file_path = os.path.dirname(os.path.realpath(__file__)) + '/results/' + output_folder + '/'
             pathlib.Path(sarif_file_path).mkdir(parents=True, exist_ok=True)
             with open(sarif_file_path + file_name + '.sarif', 'w') as sarif_file:
                 json.dump(sarif_outputs[file_name].print(), sarif_file, indent=2)
@@ -185,8 +187,9 @@ def exec_cmd(args: argparse.Namespace):
         for sarif_output in sarif_outputs.values():
             for run in sarif_output.sarif.runs:
                 sarif_holder.addRun(run)
-        sarif_file_path = 'results/' + output_folder + '.sarif'
-        with open(sarif_file_path, 'w') as sarif_file:
+        sarif_file_path = os.path.dirname(os.path.realpath(__file__)) + '/results/'
+        pathlib.Path(sarif_file_path).mkdir(parents=True, exist_ok=True)
+        with open(sarif_file_path + output_folder + '.sarif', 'w') as sarif_file:
             json.dump(sarif_holder.print(), sarif_file, indent=2)
 
     return logs

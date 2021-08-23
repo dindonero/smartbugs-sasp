@@ -1,7 +1,6 @@
 from sarif_om import *
 
-from smartbugs.src.output_parser.SarifHolder import isNotDuplicateRule, parseRule, \
-    parseArtifact, parseResult
+from src.output_parser.SarifHolder import isNotDuplicateRule, parseRule, parseArtifact, parseResult
 
 
 class Slither:

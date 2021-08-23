@@ -1,8 +1,8 @@
 import numpy
 from sarif_om import *
 
-from smartbugs.src.output_parser.SarifHolder import parseLogicalLocation, parseArtifact, parseRule, parseResult, \
-    isNotDuplicateLogicalLocation
+from src.output_parser.SarifHolder import parseLogicalLocation, parseArtifact, \
+    parseRule, parseResult, isNotDuplicateLogicalLocation
 
 
 class Securify:

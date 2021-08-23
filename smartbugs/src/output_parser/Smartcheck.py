@@ -1,8 +1,7 @@
 from sarif_om import *
 
-from smartbugs.src.output_parser.Parser import Parser
-from smartbugs.src.output_parser.SarifHolder import isNotDuplicateRule, parseArtifact, parseRule, parseResult, \
-    parseLogicalLocation
+from src.output_parser.Parser import Parser
+from src.output_parser.SarifHolder import isNotDuplicateRule, parseArtifact, parseRule, parseResult, parseLogicalLocation
 
 
 class Smartcheck(Parser):

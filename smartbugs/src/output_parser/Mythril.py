@@ -1,6 +1,6 @@
 from sarif_om import *
 
-from smartbugs.src.output_parser.SarifHolder import isNotDuplicateRule, parseLogicalLocation, parseRule, \
+from src.output_parser.SarifHolder import isNotDuplicateRule, parseLogicalLocation, parseRule, \
     parseResult, parseArtifact, isNotDuplicateLogicalLocation
 
 

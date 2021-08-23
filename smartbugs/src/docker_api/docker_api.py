@@ -65,7 +65,7 @@ mount volumes
 """
 def mount_volumes(dir_path, logs):
     try:
-        volume_bindings = {os.path.abspath(dir_path): {'bind': '/' + dir_path, 'mode': 'rw'}}
+        volume_bindings = {os.path.abspath(dir_path): {'bind': '/mnt/' + dir_path, 'mode': 'rw'}}
         return volume_bindings
     except os.error as err:
         print(err)
@@ -258,9 +258,9 @@ def analyse_files(tool, file, file_path_in_repo, logs, now, sarif_outputs, outpu
 
         cmd = cfg['cmd']
         if '{contract}' in cmd:
-            cmd = cmd.replace('{contract}', '/' + file)
+            cmd = cmd.replace('{contract}', '/mnt/' + file)
         else:
-            cmd += ' /' + file
+            cmd += ' /mnt/' + file
         container = None
         try:
             container = client.containers.run(image,
