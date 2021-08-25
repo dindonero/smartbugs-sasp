@@ -46,7 +46,7 @@ def get_available_tools():
 def analyse_solidity_files():
     global current_users
     user_hash = request.form['user-hash']
-    tools = request.form['tools'].replace(' ', '').split(',')
+    tools = request.form.getlist('tools')
     processes = 1
 
     assert user_hash.isalnum()
