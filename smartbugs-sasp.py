@@ -7,7 +7,7 @@ from multiprocessing.managers import BaseManager
 
 from flask import Flask, request, send_from_directory
 
-from smartbugs.smartBugs import analyse
+from smartbugs.smartBugs import analyse, Task
 from smartbugs.src.output_parser.SarifHolder import SarifHolder
 
 DEBUG = True
@@ -105,7 +105,7 @@ def analyse_solidity_files():
         sarif_outputs[file_path_in_repo] = SarifHolder()
 
         for tool in tools:
-            tasks.append((
+            tasks.append(Task(
                          tool, file.replace('\\', '/'), file_path_in_repo , sarif_outputs, repo_user_path,
                          output_version,
                          len(files_to_analyze) * len(tools), nb_task_done, total_execution,
