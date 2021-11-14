@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-from collections import namedtuple
 
 import git
 import json
@@ -10,9 +9,11 @@ import pathlib
 import sys
 import yaml
 
+from collections import namedtuple
 from datetime import timedelta
 from multiprocessing import Manager, Pool
 from src.docker_api.docker_api import analyse_files
+from src.exception.SmartBugsException import SmartBugsException
 from src.interface.cli import create_parser, getRemoteDataset, isRemoteDataset, DATASET_CHOICES, TOOLS_CHOICES
 from src.output_parser.SarifHolder import SarifHolder
 from time import time, localtime, strftime
@@ -25,8 +26,7 @@ with open(cfg_dataset_path, 'r') as ymlfile:
     try:
         cfg_dataset = yaml.safe_load(ymlfile)
     except yaml.YAMLError as exc:
-        print(exc)
-        raise Exception('Dataset YAML not found.')
+        raise SmartBugsException('File not found or invalid syntax: smartbugs/config/dataset/dataset.yaml')
 
 output_folder = strftime("%Y%d%m_%H%M", localtime())
 pathlib.Path(SMARTBUGS_FILE_PATH + '/results/logs/').mkdir(parents=True, exist_ok=True)
@@ -63,8 +63,7 @@ def analyse(task):
         sys.stdout.write('\x1b[1;37m' + ' [' + task.tool + '] in ' + duration + ' ' + '\x1b[0m' + '\n')
         logs.write('[%d/%d] ' % (task.nb_task_done.value, task.nb_task) + task.file + ' [' + task.tool + '] in ' + duration + ' \n')
     except Exception as e:
-        print(e)
-        raise e
+        raise SmartBugsException(str(e))
 
 
 def exec_cmd(args: argparse.Namespace):
@@ -149,7 +148,6 @@ def exec_cmd(args: argparse.Namespace):
 
     sarif_outputs = manager.dict()
     tasks = []
-    file_names = []
     file_paths_in_repo = []
     for file in files_to_analyze:
         if args.import_path == "FILE":
@@ -172,7 +170,6 @@ def exec_cmd(args: argparse.Namespace):
 
             tasks.append(Task(tool, file, file_path_in_repo, sarif_outputs, import_path, args.output_version, nb_task, nb_task_done,
                           total_execution, start_time))
-        file_names.append(os.path.splitext(os.path.basename(file))[0])
 
     # initialize all sarif outputs
     for file_name in file_paths_in_repo:
@@ -182,10 +179,10 @@ def exec_cmd(args: argparse.Namespace):
         pool.map(analyse, tasks)
 
     if args.aggregate_sarif:
-        for file_name in file_names:
+        for file_name in file_paths_in_repo:
             sarif_file_path = os.path.dirname(os.path.realpath(__file__)) + '/results/' + output_folder + '/'
             pathlib.Path(sarif_file_path).mkdir(parents=True, exist_ok=True)
-            with open(sarif_file_path + file_name + '.sarif', 'w') as sarif_file:
+            with open(sarif_file_path + os.path.splitext(os.path.basename(file_name))[0] + '.sarif', 'w') as sarif_file:
                 json.dump(sarif_outputs[file_name].print(), sarif_file, indent=2)
 
     if args.unique_sarif_output:

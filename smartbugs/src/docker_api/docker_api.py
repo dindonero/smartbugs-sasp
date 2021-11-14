@@ -289,4 +289,4 @@ def analyse_files(tool, file, file_path_in_repo, logs, now, sarif_outputs, outpu
 
     except (docker.errors.APIError, docker.errors.ContainerError, docker.errors.ImageNotFound) as err:
         print(err)
-        logs.write(err + '\n')
+        logs.write(str(err))
